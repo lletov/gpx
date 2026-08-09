@@ -1,6 +1,7 @@
 import type { Map as LMap } from 'leaflet';
 import type { AppState } from '../store';
-import { FILTER_CSS } from '../store';
+import { FILTER_CSS, useStore } from '../store';
+import { TILE_PROVIDERS } from './tiles';
 import { decimate, lerpColor } from './utils';
 
 const TILE_SIZE = 256;
@@ -29,7 +30,7 @@ function buildTileUrl(template: string, x: number, y: number, z: number) {
 function loadTile(url: string) {
     return new Promise<HTMLImageElement | null>((resolve) => {
         const img = new Image();
-        img.crossOrigin = 'anonymous'; // критично для экспорта без tainted canvas
+        img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
         img.src = url;
@@ -75,17 +76,17 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // 1. Подложка (если выключена — получаем прозрачный PNG)
+    // 1. Подложка (если выключена — прозрачный PNG)
     if (s.mapVisible) {
         ctx.save();
         ctx.globalAlpha = s.mapOpacity;
         const filter = FILTER_CSS[s.mapFilter];
-        if (filter && 'filter' in ctx) ctx.filter = filter; // в старых Safari фильтра не будет
+        if (filter && 'filter' in ctx) ctx.filter = filter;
         await drawTiles(ctx, map, tileUrl);
         ctx.restore();
     }
 
-    // 2. Трек: сначала обводка, затем цвет или градиент
+    // 2. Трек
     if (s.track.length > 1) {
         const src = s.gradientEnabled ? decimate(s.track, 1500) : s.track;
         const pts = src.map((p) => map.latLngToContainerPoint([p.lat, p.lon]));
@@ -119,7 +120,7 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
         }
     }
 
-    // 3. Промежуточные точки
+    // 3. Точки
     if (s.pointsVisible) {
         for (const w of s.waypoints) {
             const p = map.latLngToContainerPoint([w.lat, w.lon]);
@@ -144,7 +145,7 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
         }
     }
 
-    // 4. Атрибуция провайдера тайлов
+    // 4. Атрибуция
     if (s.mapVisible && attribution) {
         ctx.font = '10px system-ui, sans-serif';
         const w = ctx.measureText(attribution).width;
@@ -154,7 +155,7 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
         ctx.fillText(attribution, size.x - w - 5, size.y - 5);
     }
 
-    // 5. Скачивание (tainted canvas при CORS-проблеме бросит SecurityError)
+    // 5. Скачивание
     const base = (s.fileName ?? 'track').replace(/\.[^.]+$/, '');
     const blob = await new Promise<Blob | null>((resolve, reject) => {
         try {
@@ -170,4 +171,25 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
     a.download = `${base}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+}
+
+/** Общая точка входа для кнопок экспорта (десктоп и мобилка) */
+export async function exportCurrent() {
+    const st = useStore.getState();
+    const map = st.mapInstance;
+    if (!map || st.track.length < 2 || st.exporting) return;
+
+    const provider = TILE_PROVIDERS.find((p) => p.id === st.providerId) ?? TILE_PROVIDERS[0];
+    st.patch({ exporting: true });
+    try {
+        await exportImage(map, st, provider.url, provider.attribution);
+    } catch (e) {
+        alert(
+            'Не удалось экспортировать: ' +
+            (e as Error).message +
+            '\n\nЧастая причина — тайлы подложки не отдают CORS-заголовок. Попробуйте другого провайдера или отключите подложку.'
+        );
+    } finally {
+        useStore.getState().patch({ exporting: false });
+    }
 }

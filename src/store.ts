@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Map as LMap } from 'leaflet';
 import type { TrackPoint, Waypoint } from './lib/gpx';
 import { parseGpx } from './lib/gpx';
 import { TILE_PROVIDERS } from './lib/tiles';
@@ -37,6 +38,11 @@ export interface AppState {
     pointColor: string;
 
     exportScale: number;
+    exporting: boolean;
+
+    // служебное
+    sheetOpen: boolean;
+    mapInstance: LMap | null;
 
     patch: (p: Partial<AppState>) => void;
     loadFile: (f: File) => Promise<void>;
@@ -67,6 +73,10 @@ export const useStore = create<AppState>((set) => ({
     pointColor: '#f59e0b',
 
     exportScale: 2,
+    exporting: false,
+
+    sheetOpen: false,
+    mapInstance: null,
 
     patch: (p) => set(p),
 
@@ -75,7 +85,8 @@ export const useStore = create<AppState>((set) => ({
             const text = await f.text();
             const { track, waypoints, name } = parseGpx(text);
             if (!track.length) throw new Error('в файле нет точек трека (trkpt)');
-            set({ track, waypoints, trackName: name ?? null, fileName: f.name });
+            // шторку сворачиваем, чтобы трек было видно сразу
+            set({ track, waypoints, trackName: name ?? null, fileName: f.name, sheetOpen: false });
         } catch (e) {
             alert('Не удалось прочитать файл: ' + (e as Error).message);
         }

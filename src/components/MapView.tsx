@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import L from 'leaflet';
-import { Download, Loader2 } from 'lucide-react';
 import { useStore, FILTER_CSS } from '../store';
 import { TILE_PROVIDERS } from '../lib/tiles';
 import { decimate, lerpColor } from '../lib/utils';
-import { exportImage } from '../lib/export';
+import ExportButton from './ExportButton';
 
 export default function MapView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
     const tileRef = useRef<L.TileLayer | null>(null);
     const overlayRef = useRef<L.LayerGroup | null>(null);
-    const [busy, setBusy] = useState(false);
     const [dragOver, setDragOver] = useState(false);
 
     const s = useStore();
@@ -20,10 +18,17 @@ export default function MapView() {
     // Инициализация карты
     useEffect(() => {
         if (!containerRef.current) return;
-        const map = L.map(containerRef.current).setView([46.5, 7.9], 4);
+        const map = L.map(containerRef.current, { attributionControl: false }).setView([46.5, 7.9], 4);
         mapRef.current = map;
         overlayRef.current = L.layerGroup().addTo(map);
+        useStore.getState().patch({ mapInstance: map });
+
+        const onResize = () => map.invalidateSize();
+        window.addEventListener('resize', onResize);
+
         return () => {
+            window.removeEventListener('resize', onResize);
+            useStore.getState().patch({ mapInstance: null });
             map.remove();
             mapRef.current = null;
             overlayRef.current = null;
@@ -54,7 +59,21 @@ export default function MapView() {
         if (!pane) return;
         pane.style.opacity = String(s.mapOpacity);
         pane.style.filter = FILTER_CSS[s.mapFilter];
-    }, [s.mapOpacity, s.mapFilter, s.mapVisible]);
+    }, [s.mapOpacity, s.mapFilter]);
+
+    // «Шахматный» фон для режима без подложки.
+    // Управляем инлайновым стилем, НЕ трогая className — им владеет Leaflet
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        if (s.mapVisible) {
+            el.style.backgroundImage = '';
+            el.style.backgroundSize = '';
+        } else {
+            el.style.backgroundImage = 'repeating-conic-gradient(#e2e8f0 0% 25%, #ffffff 0% 50%)';
+            el.style.backgroundSize = '24px 24px';
+        }
+    }, [s.mapVisible]);
 
     // Трек и точки
     useEffect(() => {
@@ -112,33 +131,16 @@ export default function MapView() {
         s.pointsVisible, s.pointRadius, s.pointColor,
     ]);
 
-    // Вписать трек в экран при загрузке
+    // Вписать трек (снизу запас под шторку)
     useEffect(() => {
         const map = mapRef.current;
         if (map && s.track.length > 1) {
             map.fitBounds(L.latLngBounds(s.track.map((p) => [p.lat, p.lon] as L.LatLngTuple)), {
-                padding: [40, 40],
+                paddingTopLeft: [24, 24],
+                paddingBottomRight: [24, 96],
             });
         }
     }, [s.track]);
-
-    const handleExport = async () => {
-        const map = mapRef.current;
-        if (!map || !s.track.length) return;
-        const provider = TILE_PROVIDERS.find((p) => p.id === s.providerId) ?? TILE_PROVIDERS[0];
-        setBusy(true);
-        try {
-            await exportImage(map, s, provider.url, provider.attribution);
-        } catch (e) {
-            alert(
-                'Не удалось экспортировать: ' +
-                (e as Error).message +
-                '\n\nЧастая причина — тайлы подложки не отдают CORS-заголовок. Попробуйте другого провайдера или отключите подложку.'
-            );
-        } finally {
-            setBusy(false);
-        }
-    };
 
     const onDrop = async (e: DragEvent) => {
         e.preventDefault();
@@ -149,7 +151,7 @@ export default function MapView() {
 
     return (
         <div
-            className="map-wrap"
+            className="relative h-full w-full"
             onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -157,12 +159,21 @@ export default function MapView() {
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
         >
-            <div ref={containerRef} className={`map${!s.mapVisible ? ' no-bg' : ''}`} />
-            {dragOver && <div className="drop-overlay">Отпустите GPX-файл</div>}
-            <button className="export-btn" onClick={handleExport} disabled={busy || !s.track.length}>
-                {busy ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
-                Скачать PNG
-            </button>
+            {/* ВАЖНО: className статичный. Leaflet сам управляет классами этого элемента
+          (leaflet-container и др.). Динамический className от React затирает их
+          при ре-рендере и ломает карту */}
+            <div ref={containerRef} className="h-full w-full" />
+
+            {dragOver && (
+                <div className="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center bg-slate-900/70 text-lg font-medium text-white">
+                    Отпустите GPX-файл
+                </div>
+            )}
+
+            {/* Экспорт — только на десктопе; на мобилке кнопка в шторке */}
+            <div className="absolute right-3 top-3 z-[1000] hidden lg:block">
+                <ExportButton />
+            </div>
         </div>
     );
 }
