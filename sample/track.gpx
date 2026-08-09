@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="gpx-visualizer-sample" xmlns="http://www.topografix.com/GPX/1/1">
+  <wpt lat="46.0207" lon="7.7491"><ele>1620</ele><name>Старт</name></wpt>
+  <wpt lat="45.9863" lon="7.7820"><ele>2280</ele><name>Смотровая</name></wpt>
+  <trk>
+    <name>Sample Loop</name>
+    <trkseg>
+      <trkpt lat="46.0207" lon="7.7491"><ele>1620</ele></trkpt>
+      <trkpt lat="46.0155" lon="7.7550"><ele>1700</ele></trkpt>
+      <trkpt lat="46.0090" lon="7.7605"><ele>1810</ele></trkpt>
+      <trkpt lat="46.0030" lon="7.7680"><ele>1950</ele></trkpt>
+      <trkpt lat="45.9975" lon="7.7740"><ele>2100</ele></trkpt>
+      <trkpt lat="45.9920" lon="7.7790"><ele>2210</ele></trkpt>
+      <trkpt lat="45.9863" lon="7.7820"><ele>2280</ele></trkpt>
+      <trkpt lat="45.9810" lon="7.7780"><ele>2200</ele></trkpt>
+      <trkpt lat="45.9780" lon="7.7690"><ele>2050</ele></trkpt>
+      <trkpt lat="45.9800" lon="7.7590"><ele>1900</ele></trkpt>
+      <trkpt lat="45.9860" lon="7.7520"><ele>1780</ele></trkpt>
+      <trkpt lat="45.9950" lon="7.7470"><ele>1700</ele></trkpt>
+      <trkpt lat="46.0060" lon="7.7440"><ele>1650</ele></trkpt>
+      <trkpt lat="46.0150" lon="7.7450"><ele>1630</ele></trkpt>
+      <trkpt lat="46.0207" lon="7.7491"><ele>1620</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
