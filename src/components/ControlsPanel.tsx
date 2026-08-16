@@ -11,13 +11,26 @@ const colorCls = 'h-8 w-12 shrink-0 cursor-pointer rounded-md border border-slat
 const rangeCls = 'w-32 cursor-pointer accent-sky-400 sm:w-40';
 const checkboxCls = 'h-4 w-4 shrink-0 cursor-pointer accent-sky-400';
 
-function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
+function Section({
+    title,
+    icon,
+    action,
+    children,
+}: {
+    title: string;
+    icon: ReactNode;
+    action?: ReactNode;
+    children: ReactNode;
+}) {
     return (
         <section className="border-t border-slate-800 py-4 first:border-t-0 first:pt-1">
-            <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                {icon}
-                {title}
-            </h3>
+            <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    {icon}
+                    {title}
+                </h3>
+                {action}
+            </div>
             <div className="space-y-2.5">{children}</div>
         </section>
     );
@@ -110,11 +123,19 @@ export default function ControlsPanel() {
                 )}
             </Section>
 
-            <Section title="Подложка" icon={<MapIcon size={14} />}>
-                <Row label="Показывать">
-                    <input type="checkbox" className={checkboxCls} checked={s.mapVisible}
-                        onChange={(e) => s.patch({ mapVisible: e.target.checked })} />
-                </Row>
+            <Section
+                title="Подложка"
+                icon={<MapIcon size={14} />}
+                action={
+                    <input
+                        type="checkbox"
+                        className={checkboxCls}
+                        checked={s.mapVisible}
+                        onChange={(e) => s.patch({ mapVisible: e.target.checked })}
+                        aria-label="Показывать подложку"
+                    />
+                }
+            >
                 {s.mapVisible && (
                     <>
                         <select className={selectCls} value={s.providerId}
@@ -139,11 +160,19 @@ export default function ControlsPanel() {
                 )}
             </Section>
 
-            <Section title="Точки (wpt)" icon={<MapPin size={14} />}>
-                <Row label="Показывать">
-                    <input type="checkbox" className={checkboxCls} checked={s.pointsVisible}
-                        onChange={(e) => s.patch({ pointsVisible: e.target.checked })} />
-                </Row>
+            <Section
+                title="Точки (wpt)"
+                icon={<MapPin size={14} />}
+                action={
+                    <input
+                        type="checkbox"
+                        className={checkboxCls}
+                        checked={s.pointsVisible}
+                        onChange={(e) => s.patch({ pointsVisible: e.target.checked })}
+                        aria-label="Показывать точки"
+                    />
+                }
+            >
                 {s.pointsVisible && (
                     <>
                         <Row label={`Радиус: ${s.pointRadius}px`}>
@@ -156,7 +185,7 @@ export default function ControlsPanel() {
                         </Row>
                     </>
                 )}
-                {s.track.length > 0 && s.waypoints.length === 0 && (
+                {s.pointsVisible && s.track.length > 0 && s.waypoints.length === 0 && (
                     <p className="text-xs text-slate-500">В этом треке нет точек wpt</p>
                 )}
             </Section>
