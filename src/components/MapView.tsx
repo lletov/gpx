@@ -5,6 +5,7 @@ import { useStore, FILTER_CSS } from '../store';
 import { TILE_PROVIDERS } from '../lib/tiles';
 import { decimate, lerpColor } from '../lib/utils';
 import ExportButton from './ExportButton';
+import MapControls, { FIT_BOUNDS_OPTIONS } from './MapControls';
 
 export default function MapView() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -18,7 +19,11 @@ export default function MapView() {
     // Инициализация карты
     useEffect(() => {
         if (!containerRef.current) return;
-        const map = L.map(containerRef.current, { attributionControl: false }).setView([46.5, 7.9], 4);
+        const map = L.map(containerRef.current, {
+            attributionControl: false, zoomControl: false, // свои кнопки в MapControls
+            minZoom: 2,
+            maxZoom: 20,
+        }).setView([46.5, 7.9], 4);
         mapRef.current = map;
         overlayRef.current = L.layerGroup().addTo(map);
         useStore.getState().patch({ mapInstance: map });
@@ -135,10 +140,10 @@ export default function MapView() {
     useEffect(() => {
         const map = mapRef.current;
         if (map && s.track.length > 1) {
-            map.fitBounds(L.latLngBounds(s.track.map((p) => [p.lat, p.lon] as L.LatLngTuple)), {
-                paddingTopLeft: [24, 24],
-                paddingBottomRight: [24, 96],
-            });
+            map.fitBounds(
+                L.latLngBounds(s.track.map((p) => [p.lat, p.lon] as L.LatLngTuple)),
+                FIT_BOUNDS_OPTIONS
+            );
         }
     }, [s.track]);
 
@@ -173,7 +178,9 @@ export default function MapView() {
             {/* Экспорт — только на десктопе; на мобилке кнопка в шторке */}
             <div className="absolute right-3 top-3 z-[1000] hidden lg:block">
                 <ExportButton />
+
             </div>
+            <MapControls />
         </div>
     );
 }
