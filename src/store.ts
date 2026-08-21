@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Map as LMap } from 'leaflet';
 import type { TrackPoint, Waypoint } from './lib/gpx';
-import { parseGpx } from './lib/gpx';
+import { parseGpxFile } from './lib/gpx';
 import { TILE_PROVIDERS } from './lib/tiles';
 
 export type MapFilter = 'none' | 'grayscale' | 'sepia' | 'invert';
@@ -82,9 +82,8 @@ export const useStore = create<AppState>((set) => ({
 
     loadFile: async (f) => {
         try {
-            const text = await f.text();
-            const { track, waypoints, name } = parseGpx(text);
-            if (!track.length) throw new Error('в файле нет точек трека (trkpt)');
+            const { track, waypoints, name } = await parseGpxFile(f);
+            if (!track.length) throw new Error('в файле нет точек трека (trkpt/rtept)');
             // шторку сворачиваем, чтобы трек было видно сразу
             set({ track, waypoints, trackName: name ?? null, fileName: f.name, sheetOpen: false });
         } catch (e) {
