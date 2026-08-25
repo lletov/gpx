@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../store';
 import { trackDistanceMeters } from '../lib/utils';
+import { useT } from '../lib/i18n';
 import ControlsPanel from './ControlsPanel';
 import ExportButton from './ExportButton';
 
@@ -33,9 +34,10 @@ export default function MobileSheet() {
     });
 
     const title = trackName ?? fileName ?? 'GPX Visualizer';
+    const t = useT();
     const subtitle = track.length
-        ? `${track.length} точек · ${(trackDistanceMeters(track) / 1000).toFixed(1)} км`
-        : 'Загрузите GPX-файл';
+        ? t('trackStats', { points: track.length, km: (trackDistanceMeters(track) / 1000).toFixed(1) })
+        : t('sheetEmpty');
 
     const toggle = () => patch({ sheetOpen: !open });
 
@@ -112,7 +114,7 @@ export default function MobileSheet() {
     return (
         <div
             ref={sheetRef}
-            className={`fixed inset-x-0 bottom-0 z-[1001] flex h-[78dvh] max-h-[640px] flex-col rounded-t-2xl bg-slate-900 shadow-[0_-8px_30px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-out lg:hidden ${open ? 'translate-y-0' : 'translate-y-[calc(100%-84px)]'
+            className={`fixed inset-x-0 bottom-0 z-[1001] flex h-[78dvh] max-h-[640px] flex-col rounded-t-2xl bg-panel shadow-[0_-8px_30px_rgba(0,0,0,0.25)] transition-transform duration-300 ease-out lg:hidden ${open ? 'translate-y-0' : 'translate-y-[calc(100%-84px)]'
                 }`}
         >
             {/* Шапка: зона перетаскивания. Видна всегда, в свёрнутом состоянии — только она */}
@@ -126,24 +128,21 @@ export default function MobileSheet() {
                         didDrag.current = false;
                     }
                 }}
-                className="shrink-0 cursor-grab touch-none select-none border-b border-slate-800 px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2 active:cursor-grabbing"
+                className="shrink-0 cursor-grab touch-none select-none border-b border-line px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2 active:cursor-grabbing"
             >
-                <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-600" aria-hidden />
+                <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted/60" aria-hidden />
                 <div className="flex items-center gap-2">
                     <button
                         onClick={toggle}
                         className="min-w-0 flex-1 text-left"
                         aria-label={open ? 'Свернуть панель' : 'Развернуть панель'}
                     >
-                        <span className="block truncate text-sm font-semibold text-slate-100">{title}</span>
-                        <span className="block truncate text-xs text-slate-400">{subtitle}</span>
+                        <span className="block truncate text-sm font-semibold text-main">{title}</span>
+                        <span className="block truncate text-xs text-muted">{subtitle}</span>
                     </button>
                     <ExportButton className="shrink-0" />
-                    <button
-                        onClick={toggle}
-                        className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200"
-                        aria-label={open ? 'Свернуть' : 'Развернуть'}
-                    >
+                    <button onClick={toggle} className="shrink-0 rounded-lg p-2 text-muted transition-colors hover:bg-hover hover:text-main"
+                        aria-label={open ? t('ariaHidePanel') : t('ariaShowPanel')}>
                         {open ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                     </button>
                 </div>

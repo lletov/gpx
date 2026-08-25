@@ -6,6 +6,7 @@ import { TILE_PROVIDERS } from '../lib/tiles';
 import { decimate, lerpColor } from '../lib/utils';
 import ExportButton from './ExportButton';
 import MapControls, { FIT_BOUNDS_OPTIONS } from './MapControls';
+import { useT } from '../lib/i18n';
 
 export default function MapView() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -13,6 +14,7 @@ export default function MapView() {
     const tileRef = useRef<L.TileLayer | null>(null);
     const overlayRef = useRef<L.LayerGroup | null>(null);
     const [dragOver, setDragOver] = useState(false);
+    const t = useT()
 
     const s = useStore();
 
@@ -154,6 +156,7 @@ export default function MapView() {
         if (f) await s.loadFile(f);
     };
 
+
     return (
         <div
             className="relative h-full w-full"
@@ -170,8 +173,8 @@ export default function MapView() {
             <div ref={containerRef} className="h-full w-full" />
 
             {dragOver && (
-                <div className="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center bg-slate-900/70 text-lg font-medium text-white">
-                    Отпустите GPX-файл
+                <div className="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center bg-app/70 text-lg font-medium text-main">
+                    {t('dropFileHere')}
                 </div>
             )}
 

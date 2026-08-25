@@ -1,5 +1,49 @@
 @import 'tailwindcss';
 
 :root {
+    --bg-app: #f1f5f9;
+    --bg-panel: #ffffff;
+    --bg-input: #f1f5f9;
+    --bg-hover: #e2e8f0;
+    --line: #e2e8f0;
+    --text-main: #0f172a;
+    --text-dim: #334155;
+    --text-muted: #64748b;
+    color-scheme: light;
+}
+
+.dark {
+    --bg-app: #020617;
+    --bg-panel: #0f172a;
+    --bg-input: #1e293b;
+    --bg-hover: #334155;
+    --line: #334155;
+    --text-main: #f1f5f9;
+    --text-dim: #cbd5e1;
+    --text-muted: #94a3b8;
     color-scheme: dark;
+}
+
+/* Семантические цвета: bg-panel, text-main, border-line и т.д. */
+@theme inline {
+    --color-app: var(--bg-app);
+    --color-panel: var(--bg-panel);
+    --color-input: var(--bg-input);
+    --color-hover: var(--bg-hover);
+    --color-line: var(--line);
+    --color-main: var(--text-main);
+    --color-dim: var(--text-dim);
+    --color-muted: var(--text-muted);
+}
+
+@keyframes modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
