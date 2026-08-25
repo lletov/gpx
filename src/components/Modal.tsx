@@ -7,10 +7,37 @@ export interface ModalProps {
     icon?: ReactNode;
     children: ReactNode;
     confirmText: string;
-    cancelText?: string; // если не передать — будет одна кнопка
+    cancelText?: string;
     confirmVariant?: 'primary' | 'danger';
-    onConfirm?: () => void;
+    onConfirm?: () => void | boolean | Promise<void | boolean>;
     onCancel?: () => void;
+}
+
+export function ModalHost() {
+    const modal = useStore((s) => s.modal);
+    const closeModal = useStore((s) => s.closeModal);
+
+    if (!modal) return null;
+
+    return (
+        <Modal
+            title={modal.title}
+            icon={modal.icon}
+            confirmText={modal.confirmText}
+            cancelText={modal.cancelText}
+            confirmVariant={modal.confirmVariant}
+            onConfirm={async () => {
+                const res = await modal.onConfirm?.();
+                if (res !== false) closeModal();
+            }}
+            onCancel={() => {
+                modal.onCancel?.();
+                closeModal();
+            }}
+        >
+            {modal.content}
+        </Modal>
+    );
 }
 
 export function Modal({
@@ -37,63 +64,36 @@ export function Modal({
             <div
                 role="dialog"
                 aria-modal="true"
-                className="relative flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl animate-[modal-in_0.18s_ease-out]"
+                className="relative flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border border-line bg-panel p-5 shadow-2xl animate-[modal-in_0.18s_ease-out]"
             >
                 {title && (
                     <div className="mb-3 flex items-center gap-2">
                         {icon}
-                        <h2 className="text-base font-semibold text-slate-100">{title}</h2>
+                        <h2 className="text-base font-semibold text-main">{title}</h2>
                     </div>
                 )}
-                <div className="min-h-0 overflow-y-auto text-sm leading-relaxed text-slate-300">{children}</div>
+                <div className="min-h-0 overflow-y-auto text-sm leading-relaxed text-dim">{children}</div>
                 <div className="mt-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-end">
                     {cancelText && (
                         <button
                             onClick={onCancel}
-                            className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+                            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-dim transition-colors hover:bg-hover"
                         >
                             {cancelText}
                         </button>
                     )}
                     <button
-                        onClick={onConfirm}
+                        onClick={() => void onConfirm?.()}
                         className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors ${confirmVariant === 'danger'
-                                ? 'bg-red-500 hover:bg-red-400'
-                                : 'bg-sky-500 hover:bg-sky-400'
+                            ? 'bg-red-500 hover:bg-red-400'
+                            : 'bg-sky-500 hover:bg-sky-400'
                             }`}
                     >
                         {confirmText}
                     </button>
                 </div>
+
             </div>
-        </div>
-    );
-}
-
-/** Единственная точка рендера: одновременно может быть не больше одной модалки */
-export function ModalHost() {
-    const modal = useStore((s) => s.modal);
-    const closeModal = useStore((s) => s.closeModal);
-
-    if (!modal) return null;
-
-    return (
-        <Modal
-            title={modal.title}
-            icon={modal.icon}
-            confirmText={modal.confirmText}
-            cancelText={modal.cancelText}
-            confirmVariant={modal.confirmVariant}
-            onConfirm={() => {
-                modal.onConfirm?.();
-                closeModal();
-            }}
-            onCancel={() => {
-                modal.onCancel?.();
-                closeModal();
-            }}
-        >
-            {modal.content}
-        </Modal>
+        </div >
     );
 }

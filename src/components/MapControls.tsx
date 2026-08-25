@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { Minus, Plus, Scan } from 'lucide-react';
 import { useStore } from '../store';
+import { useT } from '../lib/i18n';
 
 const PAD_TL: [number, number] = [24, 24];
 const PAD_BR: [number, number] = [24, 96]; // запас снизу под мобильную шторку
@@ -22,11 +23,12 @@ const FIT_CENTER_OFFSET = L.point(
 const CENTER_EPS = 2;
 
 const btnCls =
-    'flex h-9 w-9 items-center justify-center text-slate-200 transition-colors hover:bg-slate-700/70 active:bg-slate-600/70 disabled:pointer-events-none disabled:opacity-35';
+    'flex h-9 w-9 items-center justify-center text-main transition-colors hover:bg-hover active:bg-hover disabled:pointer-events-none disabled:opacity-35';
 
 export default function MapControls() {
     const map = useStore((s) => s.mapInstance);
     const track = useStore((s) => s.track);
+    const t = useT()
 
     const trackBounds = useMemo(
         () =>
@@ -67,13 +69,13 @@ export default function MapControls() {
     const centerEnabled = !!trackCenter && !isCentered;
 
     return (
-        <div className="absolute left-3 top-3 z-[1000] flex flex-col overflow-hidden rounded-lg border border-slate-700 bg-slate-900/90 shadow-lg backdrop-blur">
+        <div className="absolute left-3 top-3 z-[1000] flex flex-col overflow-hidden rounded-lg border border-line bg-panel/90 shadow-lg backdrop-blur">
             <button
                 className={btnCls}
                 onClick={() => map?.zoomIn()}
                 disabled={!map || !canZoomIn}
-                title="Приблизить"
-                aria-label="Приблизить"
+                title={t('zoomIn')} aria-label={t('zoomIn')}
+
             >
                 <Plus size={16} />
             </button>
@@ -81,20 +83,20 @@ export default function MapControls() {
                 className={btnCls}
                 onClick={() => map?.zoomOut()}
                 disabled={!map || !canZoomOut}
-                title="Отдалить"
-                aria-label="Отдалить"
+                title={t('zoomOut')} aria-label={t('zoomOut')}
+
             >
                 <Minus size={16} />
             </button>
 
-            <div className="mx-1 h-px bg-slate-700" aria-hidden />
+            <div className="mx-1 h-px bg-line" aria-hidden />
 
             <button
                 className={btnCls}
                 onClick={() => trackBounds && map?.fitBounds(trackBounds, FIT_BOUNDS_OPTIONS)}
                 disabled={!centerEnabled}
-                title="Центрировать трек"
-                aria-label="Центрировать трек"
+                title={t('centerTrack')} aria-label={t('centerTrack')}
+
             >
                 <Scan size={16} />
             </button>

@@ -3,8 +3,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ReactNode } from 'react';
 import type { Map as LMap } from 'leaflet';
 import type { TrackPoint, Waypoint } from './lib/gpx';
-import { parseGpxFile } from './lib/gpx';
+import { parseGpx, parseGpxFile } from './lib/gpx';
 import { TILE_PROVIDERS } from './lib/tiles';
+import type { Lang } from './lib/i18n';
 
 export type MapFilter = 'none' | 'grayscale' | 'sepia' | 'invert';
 
@@ -35,6 +36,9 @@ export const DEFAULT_SETTINGS = {
 };
 
 export type Settings = typeof DEFAULT_SETTINGS;
+export type Theme = 'dark' | 'light';
+
+export const PRESET_LIMIT = 3;
 
 export interface Favorite {
     id: string;
@@ -50,7 +54,8 @@ export interface ModalConfig {
     confirmText: string;
     cancelText?: string;
     confirmVariant?: 'primary' | 'danger';
-    onConfirm?: () => void;
+    /** Верните false, чтобы модалка не закрывалась (например, при невалидной форме) */
+    onConfirm?: () => void | boolean | Promise<void | boolean>;
     onCancel?: () => void;
 }
 
@@ -87,6 +92,12 @@ export interface AppState {
     favorites: Favorite[];
     modal: ModalConfig | null;
 
+    lang: Lang;
+    theme: Theme;
+    userName: string;
+    premium: boolean;
+    toast: string | null;
+
     patch: (p: Partial<AppState>) => void;
     loadFile: (f: File) => Promise<void>;
     resetSettings: () => void;
@@ -95,6 +106,9 @@ export interface AppState {
     applyFavorite: (id: string) => void;
     openModal: (cfg: ModalConfig) => void;
     closeModal: () => void;
+    showToast: (msg: string) => void;
+    deleteTrack: () => void;
+    loadSample: () => Promise<boolean>;
 }
 
 export const pickSettings = (s: AppState): Settings => ({
@@ -116,9 +130,10 @@ export const pickSettings = (s: AppState): Settings => ({
     exportScale: s.exportScale,
 });
 
-/** Все значения настроек — примитивы, поэтому достаточно сравнения по ключам */
 export const settingsEqual = (a: Settings, b: Settings): boolean =>
     (Object.keys(a) as Array<keyof Settings>).every((k) => a[k] === b[k]);
+
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const useStore = create<AppState>()(
     persist(
@@ -136,6 +151,12 @@ export const useStore = create<AppState>()(
 
             favorites: [],
             modal: null,
+
+            lang: 'ru',
+            theme: 'dark',
+            userName: '',
+            premium: false,
+            toast: null,
 
             patch: (p) => set(p),
 
@@ -170,12 +191,46 @@ export const useStore = create<AppState>()(
 
             openModal: (cfg) => set({ modal: cfg }),
             closeModal: () => set({ modal: null }),
+
+            showToast: (msg) => {
+                clearTimeout(toastTimer);
+                set({ toast: msg });
+                toastTimer = setTimeout(() => set({ toast: null }), 2500);
+            },
+
+            deleteTrack: () => set({ track: [], waypoints: [], trackName: null, fileName: null }),
+
+            // Пример берётся из public/sample/track.gpx, настройки сбрасываются к дефолтным
+            loadSample: async () => {
+                try {
+                    const res = await fetch(`${import.meta.env.BASE_URL}sample/track.gpx`);
+                    if (!res.ok) throw new Error(String(res.status));
+                    const text = await res.text();
+                    const { track, waypoints, name } = parseGpx(text);
+                    set({
+                        ...DEFAULT_SETTINGS,
+                        track,
+                        waypoints,
+                        trackName: name ?? null,
+                        fileName: 'sample.gpx',
+                        sheetOpen: false,
+                    });
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
         }),
         {
             name: 'gpx-visualizer',
             storage: createJSONStorage(() => localStorage),
-            // из всего стора персистим только избранное
-            partialize: (s) => ({ favorites: s.favorites }),
+            partialize: (s) => ({
+                favorites: s.favorites,
+                lang: s.lang,
+                theme: s.theme,
+                userName: s.userName,
+                premium: s.premium,
+            }),
         }
     )
 );
