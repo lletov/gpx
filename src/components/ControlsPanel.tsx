@@ -3,10 +3,10 @@ import type { ReactNode } from 'react';
 import {
     BookmarkPlus, Download, Map as MapIcon, MapPin, Palette, RotateCcw, Star, Trash2, Upload,
 } from 'lucide-react';
-import { useStore } from '../store';
 import type { Favorite, MapFilter } from '../store';
 import { TILE_PROVIDERS } from '../lib/tiles';
 import { trackDistanceMeters } from '../lib/utils';
+import { DEFAULT_SETTINGS, pickSettings, settingsEqual, useStore } from '../store';
 
 const selectCls =
     'w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-[13px] text-slate-100 outline-none transition-colors focus:border-sky-400';
@@ -68,6 +68,9 @@ function NameInput({ defaultValue, onChange }: { defaultValue: string; onChange:
 export default function ControlsPanel() {
     const s = useStore();
     const km = trackDistanceMeters(s.track) / 1000;
+    const currentSettings = pickSettings(s);
+    const isDefault = settingsEqual(currentSettings, DEFAULT_SETTINGS);
+    const alreadyFavorited = s.favorites.some((f) => settingsEqual(f.settings, currentSettings));
 
     const confirmReset = () =>
         s.openModal({
@@ -276,7 +279,13 @@ export default function ControlsPanel() {
             <Section title="Избранное" icon={<Star size={14} />}>
                 <button
                     onClick={openSaveFavorite}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 px-3 py-2.5 text-[13px] text-slate-300 transition-colors hover:border-sky-400 hover:text-slate-100"
+                    disabled={alreadyFavorited}
+                    title={
+                        alreadyFavorited
+                            ? 'Текущие настройки уже есть в избранном'
+                            : 'Сохранить текущие настройки как пресет'
+                    }
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 px-3 py-2.5 text-[13px] text-slate-300 transition-colors hover:border-sky-400 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     <BookmarkPlus size={15} />
                     Сохранить текущие настройки
@@ -310,7 +319,13 @@ export default function ControlsPanel() {
             </Section>
             <button
                 onClick={confirmReset}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-[13px] text-slate-300 transition-colors hover:border-red-400/60 hover:text-red-300"
+                disabled={isDefault}
+                title={
+                    isDefault
+                        ? 'Настройки уже соответствуют начальным значениям'
+                        : 'Сбросить все настройки'
+                }
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-[13px] text-slate-300 transition-colors hover:border-red-400/60 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
                 <RotateCcw size={14} />
                 Сбросить к начальным значениям

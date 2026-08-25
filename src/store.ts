@@ -97,7 +97,7 @@ export interface AppState {
     closeModal: () => void;
 }
 
-const pickSettings = (s: AppState): Settings => ({
+export const pickSettings = (s: AppState): Settings => ({
     lineColor: s.lineColor,
     lineWidth: s.lineWidth,
     casingEnabled: s.casingEnabled,
@@ -115,6 +115,10 @@ const pickSettings = (s: AppState): Settings => ({
     pointColor: s.pointColor,
     exportScale: s.exportScale,
 });
+
+/** Все значения настроек — примитивы, поэтому достаточно сравнения по ключам */
+export const settingsEqual = (a: Settings, b: Settings): boolean =>
+    (Object.keys(a) as Array<keyof Settings>).every((k) => a[k] === b[k]);
 
 export const useStore = create<AppState>()(
     persist(
