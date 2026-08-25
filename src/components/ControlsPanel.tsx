@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Download, Map as MapIcon, MapPin, Palette, Upload } from 'lucide-react';
+import {
+    BookmarkPlus, Download, Map as MapIcon, MapPin, Palette, RotateCcw, Star, Trash2, Upload,
+} from 'lucide-react';
 import { useStore } from '../store';
-import type { MapFilter } from '../store';
+import type { Favorite, MapFilter } from '../store';
 import { TILE_PROVIDERS } from '../lib/tiles';
 import { trackDistanceMeters } from '../lib/utils';
 
@@ -45,9 +48,73 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
+function NameInput({ defaultValue, onChange }: { defaultValue: string; onChange: (value: string) => void }) {
+    const [value, setValue] = useState(defaultValue);
+    return (
+        <input
+            autoFocus
+            value={value}
+            onChange={(e) => {
+                setValue(e.target.value);
+                onChange(e.target.value);
+            }}
+            onFocus={(e) => e.target.select()}
+            placeholder="Название пресета"
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-sky-400"
+        />
+    );
+}
+
 export default function ControlsPanel() {
     const s = useStore();
     const km = trackDistanceMeters(s.track) / 1000;
+
+    const confirmReset = () =>
+        s.openModal({
+            title: 'Сбросить настройки',
+            icon: <RotateCcw size={16} className="text-amber-400" />,
+            content: (
+                <p>
+                    Все настройки линии, подложки и точек вернутся к начальным значениям. Загруженный трек и
+                    избранное останутся без изменений.
+                </p>
+            ),
+            confirmText: 'Сбросить',
+            cancelText: 'Отмена',
+            confirmVariant: 'danger',
+            onConfirm: () => useStore.getState().resetSettings(),
+        });
+
+    const openSaveFavorite = () => {
+        let name = `Пресет ${s.favorites.length + 1}`;
+        s.openModal({
+            title: 'Сохранить в избранное',
+            icon: <Star size={16} className="text-amber-400" />,
+            content: <NameInput defaultValue={name} onChange={(v) => (name = v)} />,
+            confirmText: 'Сохранить',
+            cancelText: 'Отмена',
+            onConfirm: () => {
+                const st = useStore.getState();
+                st.addFavorite(name.trim() || `Пресет ${st.favorites.length + 1}`);
+            },
+        });
+    };
+
+    const confirmDeleteFavorite = (f: Favorite) =>
+        s.openModal({
+            title: 'Удалить из избранного',
+            icon: <Trash2 size={16} className="text-red-400" />,
+            content: (
+                <p>
+                    Удалить пресет <span className="font-semibold text-slate-100">«{f.name}»</span>? Это действие
+                    нельзя отменить.
+                </p>
+            ),
+            confirmText: 'Удалить',
+            cancelText: 'Отмена',
+            confirmVariant: 'danger',
+            onConfirm: () => useStore.getState().removeFavorite(f.id),
+        });
 
     return (
         <div>
@@ -206,6 +273,48 @@ export default function ControlsPanel() {
                     Экспортируется текущий вид карты. С выключенной подложкой получится PNG с прозрачным фоном.
                 </p>
             </Section>
+            <Section title="Избранное" icon={<Star size={14} />}>
+                <button
+                    onClick={openSaveFavorite}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 px-3 py-2.5 text-[13px] text-slate-300 transition-colors hover:border-sky-400 hover:text-slate-100"
+                >
+                    <BookmarkPlus size={15} />
+                    Сохранить текущие настройки
+                </button>
+                {s.favorites.length === 0 ? (
+                    <p className="text-xs leading-relaxed text-slate-500">
+                        Сохраняйте пресеты стиля и применяйте их в один клик
+                    </p>
+                ) : (
+                    <ul className="space-y-1.5">
+                        {s.favorites.map((f) => (
+                            <li key={f.id} className="flex items-center gap-1 rounded-lg bg-slate-800/70 py-1 pl-3 pr-1.5">
+                                <button
+                                    onClick={() => s.applyFavorite(f.id)}
+                                    className="min-w-0 flex-1 truncate text-left text-[13px] text-slate-200 transition-colors hover:text-sky-300"
+                                    title="Применить пресет"
+                                >
+                                    {f.name}
+                                </button>
+                                <button
+                                    onClick={() => confirmDeleteFavorite(f)}
+                                    className="shrink-0 rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-700 hover:text-red-400"
+                                    aria-label={`Удалить пресет ${f.name}`}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Section>
+            <button
+                onClick={confirmReset}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-[13px] text-slate-300 transition-colors hover:border-red-400/60 hover:text-red-300"
+            >
+                <RotateCcw size={14} />
+                Сбросить к начальным значениям
+            </button>
 
             <footer className="border-t border-slate-800 pb-2 pt-3 text-[11px] leading-relaxed text-slate-500">
                 Картографические данные: © участники OpenStreetMap, © CARTO, Tiles © Esri, OpenTopoMap (CC-BY-SA)

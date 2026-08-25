@@ -1,7 +1,6 @@
 import type { Map as LMap } from 'leaflet';
 import type { AppState } from '../store';
-import { FILTER_CSS, useStore } from '../store';
-import { TILE_PROVIDERS } from './tiles';
+import { FILTER_CSS } from '../store';
 import { decimate, lerpColor } from './utils';
 
 const TILE_SIZE = 256;
@@ -62,7 +61,19 @@ async function drawTiles(ctx: CanvasRenderingContext2D, map: LMap, tileUrl: stri
     await Promise.all(jobs);
 }
 
-export async function exportImage(map: LMap, s: AppState, tileUrl: string, attribution: string) {
+export interface RenderedImage {
+    dataUrl: string;
+    fileName: string;
+    width: number;
+    height: number;
+}
+
+export async function renderImage(
+    map: LMap,
+    s: AppState,
+    tileUrl: string,
+    attribution: string
+): Promise<RenderedImage> {
     const size = map.getSize();
     const scale = s.exportScale;
 
@@ -155,41 +166,15 @@ export async function exportImage(map: LMap, s: AppState, tileUrl: string, attri
         ctx.fillText(attribution, size.x - w - 5, size.y - 5);
     }
 
-    // 5. Скачивание
-    const base = (s.fileName ?? 'track').replace(/\.[^.]+$/, '');
-    const blob = await new Promise<Blob | null>((resolve, reject) => {
-        try {
-            canvas.toBlob(resolve, 'image/png');
-        } catch (e) {
-            reject(e);
-        }
-    });
-    if (!blob) throw new Error('не удалось получить изображение');
-
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${base}.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    // 5. Результат (на tainted-canvas toDataURL бросит SecurityError)
+    const dataUrl = canvas.toDataURL('image/png');
+    const fileName = `${(s.fileName ?? 'track').replace(/\.[^.]+$/, '')}.png`;
+    return { dataUrl, fileName, width: canvas.width, height: canvas.height };
 }
 
-/** Общая точка входа для кнопок экспорта (десктоп и мобилка) */
-export async function exportCurrent() {
-    const st = useStore.getState();
-    const map = st.mapInstance;
-    if (!map || st.track.length < 2 || st.exporting) return;
-
-    const provider = TILE_PROVIDERS.find((p) => p.id === st.providerId) ?? TILE_PROVIDERS[0];
-    st.patch({ exporting: true });
-    try {
-        await exportImage(map, st, provider.url, provider.attribution);
-    } catch (e) {
-        alert(
-            'Не удалось экспортировать: ' +
-            (e as Error).message +
-            '\n\nЧастая причина — тайлы подложки не отдают CORS-заголовок. Попробуйте другого провайдера или отключите подложку.'
-        );
-    } finally {
-        useStore.getState().patch({ exporting: false });
-    }
+export function downloadImage(dataUrl: string, fileName: string) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    a.click();
 }
