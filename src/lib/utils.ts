@@ -24,6 +24,37 @@ export function lerpColor(a: string, b: string, t: number): string {
     )})`;
 }
 
+/** Значения 0..1 для окраски точек градиентом: по длине трека или по высоте */
+export function gradientTValues(pts: TrackPoint[], mode: 'length' | 'elevation'): number[] {
+    const n = pts.length;
+    if (mode === 'elevation') {
+        const firstKnown = pts.find((p) => p.ele != null && Number.isFinite(p.ele))?.ele;
+        if (firstKnown != null) {
+            const eles: number[] = [];
+            let last = firstKnown;
+            for (const p of pts) {
+                if (p.ele != null && Number.isFinite(p.ele)) last = p.ele;
+                eles.push(last);
+            }
+            let min = Infinity;
+            let max = -Infinity;
+            for (const e of eles) {
+                if (e < min) min = e;
+                if (e > max) max = e;
+            }
+            const span = max - min || 1;
+            return eles.map((e) => (e - min) / span);
+        }
+        // данных о высоте нет — откатываемся к градиенту по длине
+    }
+    return pts.map((_, i) => i / Math.max(1, n - 1));
+}
+
+/** Есть ли в треке хотя бы одна точка с данными о высоте */
+export function hasElevation(pts: TrackPoint[]): boolean {
+    return pts.some((p) => p.ele != null && Number.isFinite(p.ele));
+}
+
 export function trackDistanceMeters(pts: TrackPoint[]): number {
     const R = 6371000;
     const rad = Math.PI / 180;

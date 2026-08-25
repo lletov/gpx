@@ -31,6 +31,14 @@ const ru = {
     casingColor: 'Цвет обводки',
     casingWidth: 'Ширина: {px}px',
 
+    gradientType: 'Тип градиента',
+    gradientByLength: 'По длине',
+    gradientByElevation: 'По высоте',
+    colorFromLow: 'Цвет внизу',
+    colorToHigh: 'Цвет вверху',
+    presetDefault: 'По умолчанию',
+    noElevationData: 'В этом треке нет данных о высоте',
+
     show: 'Показывать',
     opacity: 'Прозрачность: {pct}%',
     filterNone: 'Без фильтра',
@@ -145,6 +153,14 @@ const en: Record<TKey, string> = {
     casing: 'Casing',
     casingColor: 'Casing color',
     casingWidth: 'Width: {px}px',
+
+    gradientType: 'Gradient type',
+    gradientByLength: 'By distance',
+    gradientByElevation: 'By elevation',
+    colorFromLow: 'Color (low)',
+    colorToHigh: 'Color (high)',
+    presetDefault: 'Default',
+    noElevationData: 'This track has no elevation data',
 
     show: 'Show',
     opacity: 'Opacity: {pct}%',

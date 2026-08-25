@@ -8,6 +8,7 @@ import { TILE_PROVIDERS } from './lib/tiles';
 import type { Lang } from './lib/i18n';
 
 export type MapFilter = 'none' | 'grayscale' | 'sepia' | 'invert';
+export type GradientMode = 'length' | 'elevation';
 
 export const FILTER_CSS: Record<MapFilter, string> = {
     none: '',
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS = {
     gradientEnabled: false,
     gradientFrom: '#22c55e',
     gradientTo: '#ef4444',
+    gradientMode: 'length' as GradientMode,
     providerId: TILE_PROVIDERS[0].id,
     mapVisible: true,
     mapOpacity: 1,
@@ -73,6 +75,7 @@ export interface AppState {
     gradientEnabled: boolean;
     gradientFrom: string;
     gradientTo: string;
+    gradientMode: GradientMode;
 
     providerId: string;
     mapVisible: boolean;
@@ -120,6 +123,7 @@ export const pickSettings = (s: AppState): Settings => ({
     gradientEnabled: s.gradientEnabled,
     gradientFrom: s.gradientFrom,
     gradientTo: s.gradientTo,
+    gradientMode: s.gradientMode,
     providerId: s.providerId,
     mapVisible: s.mapVisible,
     mapOpacity: s.mapOpacity,
@@ -186,7 +190,7 @@ export const useStore = create<AppState>()(
             applyFavorite: (id) =>
                 set((s) => {
                     const fav = s.favorites.find((f) => f.id === id);
-                    return fav ? { ...fav.settings } : {};
+                    return fav ? { ...DEFAULT_SETTINGS, ...fav.settings } : {};
                 }),
 
             openModal: (cfg) => set({ modal: cfg }),
