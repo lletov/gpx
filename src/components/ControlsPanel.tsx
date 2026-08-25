@@ -469,20 +469,21 @@ export default function ControlsPanel() {
                             </ul>
                         )}
                     </Section>
+                    <button
+                        onClick={confirmReset}
+                        disabled={isDefault}
+                        title={isDefault ? t('resetDefaultTitle') : t('resetTitle')}
+                        className="my-4 flex w-full items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-[13px] text-dim transition-colors hover:border-red-400/60 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        <RotateCcw size={14} />
+                        {t('resetButton')}
+                    </button>
                 </>
             )}
 
 
 
-            <button
-                onClick={confirmReset}
-                disabled={isDefault}
-                title={isDefault ? t('resetDefaultTitle') : t('resetTitle')}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-[13px] text-dim transition-colors hover:border-red-400/60 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-                <RotateCcw size={14} />
-                {t('resetButton')}
-            </button>
+
 
             {/* Настройки */}
             <Section title={t('sectionSettings')} icon={<Settings size={14} />}>
