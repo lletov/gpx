@@ -41,6 +41,9 @@ export type Settings = typeof DEFAULT_SETTINGS;
 export type Theme = 'dark' | 'light';
 
 export const PRESET_LIMIT = 3;
+export const PRESET_NAME_MAX = 30;
+/** Имена, которые нельзя использовать для пресетов — совпадают с системным пунктом */
+export const RESERVED_PRESET_NAMES = ['по умолчанию', 'default'];
 
 export interface Favorite {
     id: string;
@@ -178,12 +181,29 @@ export const useStore = create<AppState>()(
             resetSettings: () => set({ ...DEFAULT_SETTINGS }),
 
             addFavorite: (name) =>
-                set((s) => ({
-                    favorites: [
-                        ...s.favorites,
-                        { id: crypto.randomUUID(), name, settings: pickSettings(s), createdAt: Date.now() },
-                    ],
-                })),
+                set((s) => {
+                    // Лимит пресетов на бесплатном плане
+                    if (!s.premium && s.favorites.length >= PRESET_LIMIT) return {};
+
+                    // Обрезаем по длине и убираем пробелы по краям
+                    const trimmed = name.trim().slice(0, PRESET_NAME_MAX);
+
+                    // Пустое имя
+                    if (!trimmed) return {};
+
+                    // Зарезервированные имена («по умолчанию», «default»)
+                    if (RESERVED_PRESET_NAMES.includes(trimmed.toLowerCase())) return {};
+
+                    // Дубликаты имён без учёта регистра
+                    if (s.favorites.some((f) => f.name.toLowerCase() === trimmed.toLowerCase())) return {};
+
+                    return {
+                        favorites: [
+                            ...s.favorites,
+                            { id: crypto.randomUUID(), name: trimmed, settings: pickSettings(s), createdAt: Date.now() },
+                        ],
+                    };
+                }),
 
             removeFavorite: (id) => set((s) => ({ favorites: s.favorites.filter((f) => f.id !== id) })),
 

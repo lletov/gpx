@@ -4,7 +4,7 @@ import {
     BookmarkPlus, Check, CircleUser, Crown, Download, Mail, Map as MapIcon, MapPin, MessageSquare,
     Palette, Play, RotateCcw, Settings, Share2, Star, Trash2, Upload,
 } from 'lucide-react';
-import { DEFAULT_SETTINGS, PRESET_LIMIT, pickSettings, settingsEqual, useStore } from '../store';
+import { DEFAULT_SETTINGS, PRESET_LIMIT, RESERVED_PRESET_NAMES, pickSettings, settingsEqual, useStore } from '../store';
 import type { Favorite, GradientMode, MapFilter, Theme } from '../store';
 import { useT } from '../lib/i18n';
 import type { Lang } from '../lib/i18n';
@@ -61,7 +61,9 @@ function NameInput({
 
     const error = useMemo(() => {
         const v = value.trim();
-        if (v && existingNames.some((n) => n.trim().toLowerCase() === v.toLowerCase())) {
+        if (!v) return t('presetNameEmpty');
+        if (RESERVED_PRESET_NAMES.includes(v.toLowerCase())) return t('presetNameReserved');
+        if (existingNames.some((n) => n.trim().toLowerCase() === v.toLowerCase())) {
             return t('presetNameDuplicate');
         }
         return null;
@@ -129,9 +131,17 @@ export default function ControlsPanel() {
 
     const currentSettings = pickSettings(s);
     const isDefault = settingsEqual(currentSettings, DEFAULT_SETTINGS);
+
+    // Если в localStorage пресетов оказалось больше лимита (например, добавили вручную),
+    // показываем только последние 3. Премиум видит все свои пресеты
+    const visibleFavorites = (s.premium ? s.favorites : s.favorites.slice(-PRESET_LIMIT)).filter(
+        (f) => f && typeof f.name === 'string' && f.name.trim() !== ''
+    );
+
     const alreadyFavorited =
-        isDefault || s.favorites.some((f) => settingsEqual(f.settings, currentSettings));
+        isDefault || visibleFavorites.some((f) => settingsEqual(f.settings, currentSettings));
     const limitReached = !s.premium && s.favorites.length >= PRESET_LIMIT;
+
     const hasElev = useMemo(() => hasElevation(s.track), [s.track]);
     // Режим, который реально применяется: без данных о высоте — всегда «по длине»
     const gradientMode = hasElev ? s.gradientMode : 'length';
@@ -203,8 +213,7 @@ export default function ControlsPanel() {
             cancelText: t('cancel'),
             onConfirm: () => {
                 if (!valid) return false;
-                const st = useStore.getState();
-                st.addFavorite(name.trim() || t('presetDefaultName', { n: st.favorites.length + 1 }));
+                useStore.getState().addFavorite(name.trim());
             },
         });
     };
@@ -449,7 +458,7 @@ export default function ControlsPanel() {
                         icon={<Star size={14} />}
                         action={
                             <span className="text-[11px] font-medium text-muted">
-                                {s.favorites.length}
+                                {visibleFavorites.length}
                                 {s.premium ? '' : ` / ${PRESET_LIMIT}`}
                             </span>
                         }
@@ -490,7 +499,7 @@ export default function ControlsPanel() {
                             </li>
 
                             {/* Сохранённые пресеты */}
-                            {s.favorites.map((f) => {
+                            {visibleFavorites.map((f) => {
                                 const active = settingsEqual(currentSettings, f.settings);
                                 return (
                                     <li key={f.id} className="flex items-center gap-1">
@@ -518,6 +527,9 @@ export default function ControlsPanel() {
                                     </li>
                                 );
                             })}
+                            {visibleFavorites.length === 0 && (
+                                <p className="text-xs leading-relaxed text-muted">{t('favoritesHint')}</p>
+                            )}
                         </ul>
 
                         {s.favorites.length === 0 && (

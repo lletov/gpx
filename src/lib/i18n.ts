@@ -67,6 +67,8 @@ const ru = {
     presetLimitTitle: 'Лимит бесплатного плана — 3 пресета. Премиум можно активировать в «Аккаунте»',
     savePresetTitle: 'Сохранить в избранное',
     presetNamePlaceholder: 'Название пресета',
+    presetNameEmpty: 'Введите название пресета',
+    presetNameReserved: 'Это название зарезервировано',
     presetNameDuplicate: 'Пресет с таким названием уже есть',
     applyPresetTitle: 'Применить пресет',
     deletePresetTitle: 'Удалить из избранного',
@@ -160,6 +162,7 @@ const en: Record<TKey, string> = {
     colorFromLow: 'Color (low)',
     colorToHigh: 'Color (high)',
     presetDefault: 'Default',
+
     noElevationData: 'This track has no elevation data',
 
     show: 'Show',
@@ -190,6 +193,8 @@ const en: Record<TKey, string> = {
     presetLimitTitle: 'Free plan limit is 3 presets. Premium can be activated in Account',
     savePresetTitle: 'Save to favorites',
     presetNamePlaceholder: 'Preset name',
+    presetNameEmpty: 'Enter a preset name',
+    presetNameReserved: 'This name is reserved',
     presetNameDuplicate: 'A preset with this name already exists',
     applyPresetTitle: 'Apply preset',
     deletePresetTitle: 'Remove from favorites',
