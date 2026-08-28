@@ -1,7 +1,7 @@
 import type { Map as LMap } from 'leaflet';
 import type { AppState } from '../store';
 import { FILTER_CSS } from '../store';
-import { decimate, lerpColor } from './utils';
+import { decimate, gradientTValues, lerpColor } from './utils';
 
 const TILE_SIZE = 256;
 
@@ -115,11 +115,12 @@ export async function renderImage(
         }
 
         if (s.gradientEnabled) {
+            const t = gradientTValues(src, s.gradientMode);
             for (let i = 1; i < pts.length; i++) {
                 ctx.beginPath();
                 ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
                 ctx.lineTo(pts[i].x, pts[i].y);
-                ctx.strokeStyle = lerpColor(s.gradientFrom, s.gradientTo, (i - 1) / Math.max(1, pts.length - 2));
+                ctx.strokeStyle = lerpColor(s.gradientFrom, s.gradientTo, (t[i - 1] + t[i]) / 2);
                 ctx.lineWidth = s.lineWidth;
                 ctx.stroke();
             }
@@ -165,6 +166,7 @@ export async function renderImage(
         ctx.fillStyle = '#374151';
         ctx.fillText(attribution, size.x - w - 5, size.y - 5);
     }
+
 
     // 5. Результат (на tainted-canvas toDataURL бросит SecurityError)
     const dataUrl = canvas.toDataURL('image/png');

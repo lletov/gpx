@@ -4,12 +4,12 @@ import {
     BookmarkPlus, Check, CircleUser, Crown, Download, Mail, Map as MapIcon, MapPin, MessageSquare,
     Palette, Play, RotateCcw, Settings, Share2, Star, Trash2, Upload,
 } from 'lucide-react';
-import { DEFAULT_SETTINGS, PRESET_LIMIT, pickSettings, settingsEqual, useStore } from '../store';
-import type { Favorite, MapFilter, Theme } from '../store';
+import { DEFAULT_SETTINGS, PRESET_LIMIT, RESERVED_PRESET_NAMES, pickSettings, settingsEqual, useStore } from '../store';
+import type { Favorite, GradientMode, MapFilter, Theme } from '../store';
 import { useT } from '../lib/i18n';
 import type { Lang } from '../lib/i18n';
 import { TILE_PROVIDERS } from '../lib/tiles';
-import { trackDistanceMeters } from '../lib/utils';
+import { hasElevation, trackDistanceMeters } from '../lib/utils';
 
 const selectCls =
     'w-full rounded-lg border border-line bg-input px-3 py-2 text-[13px] text-main outline-none transition-colors focus:border-sky-400';
@@ -61,7 +61,9 @@ function NameInput({
 
     const error = useMemo(() => {
         const v = value.trim();
-        if (v && existingNames.some((n) => n.trim().toLowerCase() === v.toLowerCase())) {
+        if (!v) return t('presetNameEmpty');
+        if (RESERVED_PRESET_NAMES.includes(v.toLowerCase())) return t('presetNameReserved');
+        if (existingNames.some((n) => n.trim().toLowerCase() === v.toLowerCase())) {
             return t('presetNameDuplicate');
         }
         return null;
@@ -129,8 +131,20 @@ export default function ControlsPanel() {
 
     const currentSettings = pickSettings(s);
     const isDefault = settingsEqual(currentSettings, DEFAULT_SETTINGS);
-    const alreadyFavorited = s.favorites.some((f) => settingsEqual(f.settings, currentSettings));
+
+    // Если в localStorage пресетов оказалось больше лимита (например, добавили вручную),
+    // показываем только последние 3. Премиум видит все свои пресеты
+    const visibleFavorites = (s.premium ? s.favorites : s.favorites.slice(-PRESET_LIMIT)).filter(
+        (f) => f && typeof f.name === 'string' && f.name.trim() !== ''
+    );
+
+    const alreadyFavorited =
+        isDefault || visibleFavorites.some((f) => settingsEqual(f.settings, currentSettings));
     const limitReached = !s.premium && s.favorites.length >= PRESET_LIMIT;
+
+    const hasElev = useMemo(() => hasElevation(s.track), [s.track]);
+    // Режим, который реально применяется: без данных о высоте — всегда «по длине»
+    const gradientMode = hasElev ? s.gradientMode : 'length';
 
     /* ---------- обработчики ---------- */
 
@@ -199,8 +213,7 @@ export default function ControlsPanel() {
             cancelText: t('cancel'),
             onConfirm: () => {
                 if (!valid) return false;
-                const st = useStore.getState();
-                st.addFavorite(name.trim() || t('presetDefaultName', { n: st.favorites.length + 1 }));
+                useStore.getState().addFavorite(name.trim());
             },
         });
     };
@@ -316,11 +329,26 @@ export default function ControlsPanel() {
                         </Row>
                         {s.gradientEnabled ? (
                             <>
-                                <Row label={t('colorFrom')}>
+                                <Row label={t('gradientType')}>
+                                    <select
+                                        className="w-36 rounded-lg border border-line bg-input px-2 py-1.5 text-[13px] text-main outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-40 sm:w-40"
+                                        value={gradientMode}
+                                        disabled={!hasElev}
+                                        title={!hasElev ? t('noElevationData') : undefined}
+                                        onChange={(e) => s.patch({ gradientMode: e.target.value as GradientMode })}
+                                    >
+                                        <option value="length">{t('gradientByLength')}</option>
+                                        <option value="elevation">{t('gradientByElevation')}</option>
+                                    </select>
+                                </Row>
+                                {!hasElev && (
+                                    <p className="-mt-1 text-[11px] leading-snug text-muted">{t('noElevationData')}</p>
+                                )}
+                                <Row label={gradientMode === 'elevation' ? t('colorFromLow') : t('colorFrom')}>
                                     <input type="color" className={colorCls} value={s.gradientFrom}
                                         onChange={(e) => s.patch({ gradientFrom: e.target.value })} />
                                 </Row>
-                                <Row label={t('colorTo')}>
+                                <Row label={gradientMode === 'elevation' ? t('colorToHigh') : t('colorTo')}>
                                     <input type="color" className={colorCls} value={s.gradientTo}
                                         onChange={(e) => s.patch({ gradientTo: e.target.value })} />
                                 </Row>
@@ -430,32 +458,64 @@ export default function ControlsPanel() {
                         icon={<Star size={14} />}
                         action={
                             <span className="text-[11px] font-medium text-muted">
-                                {s.favorites.length}
+                                {visibleFavorites.length}
                                 {s.premium ? '' : ` / ${PRESET_LIMIT}`}
                             </span>
                         }
                     >
                         <button
                             onClick={openSaveFavorite}
-                            disabled={alreadyFavorited}
-                            title={alreadyFavorited ? t('alreadySavedTitle') : t('saveCurrentSettings')}
+                            disabled={alreadyFavorited && !limitReached}
+                            title={
+                                limitReached
+                                    ? t('premiumTitle')
+                                    : alreadyFavorited
+                                        ? t('alreadySavedTitle')
+                                        : t('saveCurrentSettings')
+                            }
                             className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-input px-3 py-2.5 text-[13px] text-dim transition-colors hover:border-sky-400 hover:text-main disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             <BookmarkPlus size={15} />
                             {t('saveCurrentSettings')}
                         </button>
-                        {s.favorites.length === 0 ? (
-                            <p className="text-xs leading-relaxed text-muted">{t('favoritesHint')}</p>
-                        ) : (
-                            <ul className="space-y-1.5">
-                                {s.favorites.map((f) => (
-                                    <li key={f.id} className="flex items-center gap-1 rounded-lg bg-input py-1 pl-3 pr-1.5">
+
+                        <ul className="space-y-1.5">
+                            {/* Пресет «По умолчанию» — всегда первый */}
+                            <li>
+                                <button
+                                    onClick={() => s.resetSettings()}
+                                    title={t('applyPresetTitle')}
+                                    className={`flex w-full items-center gap-1 rounded-lg border py-1 pl-3 pr-3 transition-colors ${isDefault ? 'border-sky-400/70 bg-sky-400/10' : 'border-transparent bg-input hover:border-line'
+                                        }`}
+                                >
+                                    <span
+                                        className={`min-w-0 flex-1 truncate text-left text-[13px] ${isDefault ? 'font-medium text-sky-500' : 'text-dim'
+                                            }`}
+                                    >
+                                        {t('presetDefault')}
+                                    </span>
+                                    {isDefault && <Check size={14} className="shrink-0 text-sky-400" />}
+                                </button>
+                            </li>
+
+                            {/* Сохранённые пресеты */}
+                            {visibleFavorites.map((f) => {
+                                const active = settingsEqual(currentSettings, f.settings);
+                                return (
+                                    <li key={f.id} className="flex items-center gap-1">
                                         <button
                                             onClick={() => s.applyFavorite(f.id)}
-                                            className="min-w-0 flex-1 truncate text-left text-[13px] text-dim transition-colors hover:text-sky-500"
                                             title={t('applyPresetTitle')}
+                                            className={`flex min-w-0 flex-1 items-center gap-1 rounded-lg border py-1 pl-3 pr-3 transition-colors ${active ? 'border-sky-400/70 bg-sky-400/10' : 'border-transparent bg-input hover:border-line'
+                                                }`}
                                         >
-                                            {f.name}
+                                            <span
+                                                className={`min-w-0 flex-1 truncate text-left text-[13px] ${active ? 'font-medium text-sky-500' : 'text-dim'
+                                                    }`}
+                                            >
+                                                {f.name}
+                                            </span>
+                                            {active && <Check size={14} className="shrink-0 text-sky-400" />}
                                         </button>
                                         <button
                                             onClick={() => confirmDeleteFavorite(f)}
@@ -465,8 +525,15 @@ export default function ControlsPanel() {
                                             <Trash2 size={14} />
                                         </button>
                                     </li>
-                                ))}
-                            </ul>
+                                );
+                            })}
+                            {visibleFavorites.length === 0 && (
+                                <p className="text-xs leading-relaxed text-muted">{t('favoritesHint')}</p>
+                            )}
+                        </ul>
+
+                        {s.favorites.length === 0 && (
+                            <p className="text-xs leading-relaxed text-muted">{t('favoritesHint')}</p>
                         )}
                     </Section>
                     <button

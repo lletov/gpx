@@ -31,6 +31,14 @@ const ru = {
     casingColor: 'Цвет обводки',
     casingWidth: 'Ширина: {px}px',
 
+    gradientType: 'Тип градиента',
+    gradientByLength: 'По длине',
+    gradientByElevation: 'По высоте',
+    colorFromLow: 'Цвет внизу',
+    colorToHigh: 'Цвет вверху',
+    presetDefault: 'По умолчанию',
+    noElevationData: 'В этом треке нет данных о высоте',
+
     show: 'Показывать',
     opacity: 'Прозрачность: {pct}%',
     filterNone: 'Без фильтра',
@@ -59,6 +67,8 @@ const ru = {
     presetLimitTitle: 'Лимит бесплатного плана — 3 пресета. Премиум можно активировать в «Аккаунте»',
     savePresetTitle: 'Сохранить в избранное',
     presetNamePlaceholder: 'Название пресета',
+    presetNameEmpty: 'Введите название пресета',
+    presetNameReserved: 'Это название зарезервировано',
     presetNameDuplicate: 'Пресет с таким названием уже есть',
     applyPresetTitle: 'Применить пресет',
     deletePresetTitle: 'Удалить из избранного',
@@ -146,6 +156,15 @@ const en: Record<TKey, string> = {
     casingColor: 'Casing color',
     casingWidth: 'Width: {px}px',
 
+    gradientType: 'Gradient type',
+    gradientByLength: 'By distance',
+    gradientByElevation: 'By elevation',
+    colorFromLow: 'Color (low)',
+    colorToHigh: 'Color (high)',
+    presetDefault: 'Default',
+
+    noElevationData: 'This track has no elevation data',
+
     show: 'Show',
     opacity: 'Opacity: {pct}%',
     filterNone: 'No filter',
@@ -174,6 +193,8 @@ const en: Record<TKey, string> = {
     presetLimitTitle: 'Free plan limit is 3 presets. Premium can be activated in Account',
     savePresetTitle: 'Save to favorites',
     presetNamePlaceholder: 'Preset name',
+    presetNameEmpty: 'Enter a preset name',
+    presetNameReserved: 'This name is reserved',
     presetNameDuplicate: 'A preset with this name already exists',
     applyPresetTitle: 'Apply preset',
     deletePresetTitle: 'Remove from favorites',

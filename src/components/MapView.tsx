@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import L from 'leaflet';
 import { useStore, FILTER_CSS } from '../store';
 import { TILE_PROVIDERS } from '../lib/tiles';
-import { decimate, lerpColor } from '../lib/utils';
+import { decimate, gradientTValues, lerpColor } from '../lib/utils';
 import ExportButton from './ExportButton';
 import MapControls, { FIT_BOUNDS_OPTIONS } from './MapControls';
 import { useT } from '../lib/i18n';
@@ -101,6 +101,7 @@ export default function MapView() {
 
             if (s.gradientEnabled) {
                 const pts = decimate(s.track, 700);
+                const t = gradientTValues(pts, s.gradientMode);
                 for (let i = 1; i < pts.length; i++) {
                     L.polyline(
                         [
@@ -108,7 +109,7 @@ export default function MapView() {
                             [pts[i].lat, pts[i].lon],
                         ],
                         {
-                            color: lerpColor(s.gradientFrom, s.gradientTo, (i - 1) / Math.max(1, pts.length - 2)),
+                            color: lerpColor(s.gradientFrom, s.gradientTo, (t[i - 1] + t[i]) / 2),
                             weight: s.lineWidth,
                             opacity: 1,
                         }
@@ -134,7 +135,7 @@ export default function MapView() {
         }
     }, [
         s.track, s.waypoints, s.lineColor, s.lineWidth, s.casingEnabled, s.casingColor,
-        s.casingWidth, s.gradientEnabled, s.gradientFrom, s.gradientTo,
+        s.casingWidth, s.gradientEnabled, s.gradientMode, s.gradientFrom, s.gradientTo,
         s.pointsVisible, s.pointRadius, s.pointColor,
     ]);
 
