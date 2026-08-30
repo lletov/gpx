@@ -589,7 +589,7 @@ export default function ControlsPanel() {
             </Section>
 
             <footer className="border-t border-line pb-2 pt-3 text-[11px] leading-relaxed text-muted">
-                Картографические данные: © участники OpenStreetMap, © CARTO, Tiles © Esri, OpenTopoMap (CC-BY-SA)
+                Картографические данные: OpenStreetMap, Tiles © Esri, OpenTopoMap (CC-BY-SA)
             </footer>
         </div>
     );
