@@ -6,28 +6,34 @@ export interface TileProvider {
     maxNativeZoom: number;
 }
 
-// Важны провайдеры, отдающие Access-Control-Allow-Origin — иначе canvas-экспорт упадёт
 export const TILE_PROVIDERS: TileProvider[] = [
     {
-        id: 'carto-voyager',
-        name: 'CARTO Voyager',
-        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        attribution: '© OpenStreetMap contributors, © CARTO',
-        maxNativeZoom: 20,
+        id: 'osm-standard',
+        name: 'OSM Standard',
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '© OpenStreetMap contributors',
+        maxNativeZoom: 19,
     },
     {
-        id: 'carto-light',
-        name: 'CARTO Positron (светлая)',
-        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        attribution: '© OpenStreetMap contributors, © CARTO',
-        maxNativeZoom: 20,
+        id: 'esri-light',
+        name: 'Esri Light Gray (светлая)',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        attribution: 'Tiles © Esri',
+        maxNativeZoom: 19,
     },
     {
-        id: 'carto-dark',
-        name: 'CARTO Dark Matter (тёмная)',
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attribution: '© OpenStreetMap contributors, © CARTO',
-        maxNativeZoom: 20,
+        id: 'esri-dark',
+        name: 'Esri Dark Gray (тёмная)',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        attribution: 'Tiles © Esri',
+        maxNativeZoom: 19,
+    },
+    {
+        id: 'esri-topo',
+        name: 'Esri World Topo Map',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        attribution: 'Tiles © Esri',
+        maxNativeZoom: 19,
     },
     {
         id: 'esri-imagery',
